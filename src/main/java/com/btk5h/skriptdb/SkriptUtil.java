@@ -95,12 +95,24 @@ public class SkriptUtil {
       throw new RuntimeException(e);
     }
   }
-
   public static Object[] getTemplateString(VariableString vs) {
-    try {
-      return (Object[]) STRING.get(vs);
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
+    if (vs.isSimple()) {
+      try {
+        java.lang.reflect.Field simpleUnformattedField = VariableString.class.getDeclaredField("simpleUnformatted");
+        simpleUnformattedField.setAccessible(true);
+        String simpleUnformatted = (String) simpleUnformattedField.get(vs);
+        return new Object[] { simpleUnformatted };
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      try {
+        java.lang.reflect.Field stringsUnformattedField = VariableString.class.getDeclaredField("stringsUnformatted");
+        stringsUnformattedField.setAccessible(true);
+        return (Object[]) stringsUnformattedField.get(vs);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 
