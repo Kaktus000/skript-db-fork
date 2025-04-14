@@ -7,7 +7,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
@@ -252,6 +251,7 @@ public class EffExecuteStatement extends Delay {
   public String toString(@Nullable Event e, boolean debug) {
     return "execute " + query.toString(e, debug) + " in " + dataSource.toString(e, debug);
   }
+
 
   @SuppressWarnings("unchecked")
   @Override
