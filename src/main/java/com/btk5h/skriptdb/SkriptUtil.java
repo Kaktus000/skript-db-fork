@@ -42,7 +42,7 @@ public class SkriptUtil {
     SIMPLE = _FIELD;
 
     try {
-      _FIELD = Delay.class.getDeclaredField("delayed");
+      _FIELD = Delay.class.getDeclaredField("DELAYED");
       _FIELD.setAccessible(true);
     } catch (NoSuchFieldException e) {
       e.printStackTrace();
