@@ -56,10 +56,10 @@ import ch.njol.util.Kleenean;
 public class EffExecuteStatement extends Delay {
   static {
     // Register the HikariDataSource class with Skript (if not already done)
-    if (Classes.getClassInfo("datasource") == null) {
-      Classes.registerClass(new ClassInfo<>(HikariDataSource.class, "datasource")
-          .user("datasources?"));
-    }
+//    if (Classes.getClassInfo("datasource") == null) {
+  //    Classes.registerClass(new ClassInfo<>(HikariDataSource.class, "datasource")
+    //      .user("datasources?"));
+    //}
 
     Skript.registerEffect(EffExecuteStatement.class,
         "[(1¦synchronously)] execute %string% (in|on) %datasource% " +

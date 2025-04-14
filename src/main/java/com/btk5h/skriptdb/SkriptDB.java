@@ -26,7 +26,8 @@
 package com.btk5h.skriptdb;
 
 import org.bukkit.plugin.java.JavaPlugin;
-
+import com.btk5h.skriptdb.skript.EffExecuteStatement;
+import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -63,6 +64,14 @@ public final class SkriptDB extends JavaPlugin {
     try {
       rowSetFactory = RowSetProvider.newFactory();
 
+      // Registriere HikariDataSource vor dem Laden der Skript-Klassen
+      if (ch.njol.skript.registrations.Classes.getClassInfo("datasource") == null) {
+        ch.njol.skript.registrations.Classes.registerClass(
+            new ch.njol.skript.classes.ClassInfo<>(com.zaxxer.hikari.HikariDataSource.class, "datasource")
+                .user("datasources?"));
+      }
+
+      // Dann lade die Skript-Klassen
       getAddonInstance().loadClasses("com.btk5h.skriptdb.skript");
     } catch (SQLException e) {
       throw new RuntimeException(e);
