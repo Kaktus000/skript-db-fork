@@ -20,6 +20,7 @@ repositories {
 
 dependencies {
   implementation 'com.zaxxer:HikariCP:5.1.0'
+  implementation 'org.eclipse.jdt:org.eclipse.jdt.annotation:2.2.600'
 
   compileOnly 'org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT'
   compileOnly 'com.github.SkriptLang:Skript:2.7.0'
@@ -30,3 +31,4 @@ dependencies {
 tasks.withType(JavaCompile).configureEach {
   options.encoding = 'UTF-8'
 }
+

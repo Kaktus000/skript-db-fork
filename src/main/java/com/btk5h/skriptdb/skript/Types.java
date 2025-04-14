@@ -32,7 +32,6 @@ public class Types {
             return o.getJdbcUrl();
           }
 
-          @Override
           public String getVariableNamePattern() {
             return "jdbc:.+";
           }
@@ -65,6 +64,11 @@ public class Types {
 
           @Override
           public boolean canBeInstantiated(Class<? extends HikariDataSource> c) {
+            return false;
+          }
+
+          @Override
+          protected boolean canBeInstantiated() {
             return false;
           }
         }));
