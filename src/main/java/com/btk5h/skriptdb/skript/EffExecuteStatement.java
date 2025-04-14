@@ -155,49 +155,49 @@ public class EffExecuteStatement extends Delay {
       return conn.prepareStatement(query.getSingle(e));
     }
 
-    if (((VariableString) query).isSimple()) {
-      return conn.prepareStatement(SkriptUtil.getSimpleString(((VariableString) query)));
+    VariableString vs = (VariableString) query;
+
+    if (vs.isSimple()) {
+      return conn.prepareStatement(SkriptUtil.getSimpleString(vs));
     }
 
     StringBuilder sb = new StringBuilder();
     List<Object> parameters = new ArrayList<>();
-    Object[] objects = SkriptUtil.getTemplateString(((VariableString) query));
-    for (int i = 0; i < objects.length; i++) {
-      Object o = objects[i];
+    Object[] objects = SkriptUtil.getTemplateString(vs);
+    for (Object o : objects) {
       if (o instanceof String) {
-        sb.append(o);
+        String part = (String) o;
+        int startIndex = 0;
+        int endIndex;
+        while ((startIndex = part.indexOf("%{", startIndex)) != -1) {
+          sb.append(part.substring(0, startIndex));
+          endIndex = part.indexOf("}%", startIndex + 2);
+          if (endIndex == -1) {
+            sb.append(part.substring(startIndex)); // Behandle unvollständige Variablen
+            startIndex = part.length();
+            continue;
+          }
+          String variableName = part.substring(startIndex + 2, endIndex);
+          Object value = Variables.getVariable(variableName, e, true); // Lokale Variablen zuerst
+          if (value == null) {
+            value = Variables.getVariable(variableName, e, false); // Dann globale Variablen
+          }
+          if (value != null) {
+            parameters.add(value);
+            sb.append('?');
+          } else {
+            sb.append("%{").append(variableName).append("}%"); // Behalte den Platzhalter bei, wenn die Variable nicht gefunden wird
+          }
+          startIndex = endIndex + 2;
+          part = part.substring(startIndex);
+          startIndex = 0;
+        }
+        sb.append(part);
       } else {
         Expression<?> expr = SkriptUtil.getExpressionFromInfo(o);
-
-        String before = getString(objects, i - 1);
-        String after = getString(objects, i + 1);
-        boolean standaloneString = false;
-
-        if (before != null && after != null) {
-          if (before.endsWith("'") && after.endsWith("'")) {
-            standaloneString = true;
-          }
-        }
-
         Object expressionValue = expr.getSingle(e);
-
-        if (expr instanceof ExprUnsafe) {
-          sb.append(expressionValue);
-
-          if (standaloneString && expressionValue instanceof String) {
-            String rawExpression = ((ExprUnsafe) expr).getRawExpression();
-            Skript.warning(
-                String.format("Unsafe may have been used unnecessarily. Try replacing 'unsafe %1$s' with %1$s",
-                    rawExpression));
-          }
-        } else {
-          parameters.add(expressionValue);
-          sb.append('?');
-
-          if (standaloneString) {
-            Skript.warning("Do not surround expressions with quotes!");
-          }
-        }
+        parameters.add(expressionValue);
+        sb.append('?');
       }
     }
 
