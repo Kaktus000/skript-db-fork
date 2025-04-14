@@ -3,9 +3,11 @@ package com.btk5h.skriptdb.skript;
 import com.btk5h.skriptdb.SkriptDB;
 import com.btk5h.skriptdb.SkriptUtil;
 import com.zaxxer.hikari.HikariDataSource;
+
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
@@ -256,7 +258,7 @@ public class EffExecuteStatement extends Delay {
   public boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed,
                       SkriptParser.ParseResult parseResult) {
     Expression<String> statementExpr = (Expression<String>) exprs[0];
-    if (statementExpr instanceof ExprUnsafe) {
+    if (statementExpr instanceof VariableString || statementExpr instanceof ExprUnsafe) {
       query = statementExpr;
     } else {
       Skript.error("Database statements must be string literals. If you must use an expression, " +
@@ -267,7 +269,8 @@ public class EffExecuteStatement extends Delay {
     dataSource = (Expression<HikariDataSource>) exprs[1];
     Expression<?> expr = exprs[2];
     isSync = parseResult.mark == 1;
-    if (expr instanceof Variable<?> varExpr) {
+    if (expr instanceof Variable) {
+      Variable<?> varExpr = (Variable<?>) expr;
       var = SkriptUtil.getVariableName(varExpr);
       isLocal = varExpr.isLocal();
       isList = varExpr.isList();
