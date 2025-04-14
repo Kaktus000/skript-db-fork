@@ -7,6 +7,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
@@ -21,12 +22,14 @@ import java.util.concurrent.Executors;
 import javax.sql.rowset.CachedRowSet;
 
 import ch.njol.skript.Skript;
+import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.effects.Delay;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.Variable;
 import ch.njol.skript.lang.VariableString;
+import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.variables.Variables;
 import ch.njol.util.Kleenean;
 
@@ -52,6 +55,12 @@ import ch.njol.util.Kleenean;
  */
 public class EffExecuteStatement extends Delay {
   static {
+    // Register the HikariDataSource class with Skript (if not already done)
+    if (Classes.getClassInfo("datasource") == null) {
+      Classes.registerClass(new ClassInfo<>(HikariDataSource.class, "datasource")
+          .user("datasources?"));
+    }
+
     Skript.registerEffect(EffExecuteStatement.class,
         "[(1¦synchronously)] execute %string% (in|on) %datasource% " +
             "[and store [[the] (output|result)[s]] (to|in) [the] [var[iable]] %-objects%]");
@@ -150,55 +159,40 @@ public class EffExecuteStatement extends Delay {
   }
 
   private PreparedStatement createStatement(Event e, Connection conn) throws SQLException {
-    if (!(query instanceof VariableString)) {
-      return conn.prepareStatement(query.getSingle(e));
-    }
-
-    VariableString vs = (VariableString) query;
-
-    if (vs.isSimple()) {
-      return conn.prepareStatement(SkriptUtil.getSimpleString(vs));
+    String queryString = query.getSingle(e);
+    if (queryString == null) {
+      return conn.prepareStatement(""); // Or handle null query appropriately
     }
 
     StringBuilder sb = new StringBuilder();
     List<Object> parameters = new ArrayList<>();
-    Object[] objects = SkriptUtil.getTemplateString(vs);
-    for (Object o : objects) {
-      if (o instanceof String) {
-        String part = (String) o;
-        int startIndex = 0;
-        int endIndex;
-        while ((startIndex = part.indexOf("%{", startIndex)) != -1) {
-          sb.append(part.substring(0, startIndex));
-          endIndex = part.indexOf("}%", startIndex + 2);
-          if (endIndex == -1) {
-            sb.append(part.substring(startIndex)); // Behandle unvollständige Variablen
-            startIndex = part.length();
-            continue;
-          }
-          String variableName = part.substring(startIndex + 2, endIndex);
-          Object value = Variables.getVariable(variableName, e, true); // Lokale Variablen zuerst
-          if (value == null) {
-            value = Variables.getVariable(variableName, e, false); // Dann globale Variablen
-          }
-          if (value != null) {
-            parameters.add(value);
-            sb.append('?');
-          } else {
-            sb.append("%{").append(variableName).append("}%"); // Behalte den Platzhalter bei, wenn die Variable nicht gefunden wird
-          }
-          startIndex = endIndex + 2;
-          part = part.substring(startIndex);
-          startIndex = 0;
-        }
-        sb.append(part);
-      } else {
-        Expression<?> expr = SkriptUtil.getExpressionFromInfo(o);
-        Object expressionValue = expr.getSingle(e);
-        parameters.add(expressionValue);
-        sb.append('?');
+
+    int startIndex = 0;
+    int endIndex;
+    while ((startIndex = queryString.indexOf("%{", startIndex)) != -1) {
+      sb.append(queryString.substring(0, startIndex));
+      endIndex = queryString.indexOf("}%", startIndex + 2);
+      if (endIndex == -1) {
+        sb.append(queryString.substring(startIndex)); // Handle incomplete variables
+        startIndex = queryString.length();
+        continue;
       }
+      String variableName = queryString.substring(startIndex + 2, endIndex);
+      Object value = Variables.getVariable(variableName, e, true); // Local variables first
+      if (value == null) {
+        value = Variables.getVariable(variableName, e, false); // Then global variables
+      }
+      if (value != null) {
+        parameters.add(value);
+        sb.append('?');
+      } else {
+        sb.append("%{").append(variableName).append("}%"); // Keep placeholder if variable not found
+      }
+      startIndex = endIndex + 2;
+      queryString = queryString.substring(startIndex);
+      startIndex = 0;
     }
+    sb.append(queryString);
 
     PreparedStatement stmt = conn.prepareStatement(sb.toString());
 
@@ -251,7 +245,6 @@ public class EffExecuteStatement extends Delay {
   public String toString(@Nullable Event e, boolean debug) {
     return "execute " + query.toString(e, debug) + " in " + dataSource.toString(e, debug);
   }
-
 
   @SuppressWarnings("unchecked")
   @Override
