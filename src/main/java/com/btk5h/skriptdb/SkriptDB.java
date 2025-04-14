@@ -64,11 +64,13 @@ public final class SkriptDB extends JavaPlugin {
     try {
       rowSetFactory = RowSetProvider.newFactory();
 
-      // Registriere HikariDataSource vor dem Laden der Skript-Klassen
-      if (ch.njol.skript.registrations.Classes.getClassInfo("datasource") == null) {
+      // Registriere HikariDataSource direkt, ohne vorher zu prüfen
+      try {
         ch.njol.skript.registrations.Classes.registerClass(
             new ch.njol.skript.classes.ClassInfo<>(com.zaxxer.hikari.HikariDataSource.class, "datasource")
                 .user("datasources?"));
+      } catch (Exception e) {
+        getLogger().warning("Could not register HikariDataSource class: " + e.getMessage());
       }
 
       // Dann lade die Skript-Klassen
