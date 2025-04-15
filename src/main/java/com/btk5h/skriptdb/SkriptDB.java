@@ -25,6 +25,8 @@
 
 package com.btk5h.skriptdb;
 
+import ch.njol.skript.classes.ClassInfo;
+import ch.njol.skript.registrations.Classes;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.btk5h.skriptdb.skript.EffExecuteStatement;
 import com.zaxxer.hikari.HikariDataSource;
@@ -64,21 +66,25 @@ public final class SkriptDB extends JavaPlugin {
     try {
       rowSetFactory = RowSetProvider.newFactory();
 
-      // Registriere HikariDataSource direkt, ohne vorher zu prüfen
-      try {
-        ch.njol.skript.registrations.Classes.registerClass(
-            new ch.njol.skript.classes.ClassInfo<>(com.zaxxer.hikari.HikariDataSource.class, "datasource")
-                .user("datasources?"));
-      } catch (Exception e) {
-        getLogger().warning("Could not register HikariDataSource class: " + e.getMessage());
-      }
+      // Register with Skript first
+      addonInstance = Skript.registerAddon(this);
 
-      // Dann lade die Skript-Klassen
-      getAddonInstance().loadClasses("com.btk5h.skriptdb.skript");
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
+      // Load classes using the addon
+      addonInstance.loadClasses("com.btk5h.skriptdb.skript", "types", "effects", "expressions");
+
+      // Register the datasource class
+      Classes.registerClass(
+          new ClassInfo<>(HikariDataSource.class, "datasource")
+              .user("datasources?")
+              .name("Data Source")
+              .description("Represents a database connection source")
+              .since("1.0.0")
+      );
+
+    } catch (SQLException | IOException e) {
+      getLogger().severe("Failed to initialize skript-db: " + e.getMessage());
       e.printStackTrace();
+      getServer().getPluginManager().disablePlugin(this);
     }
   }
 
