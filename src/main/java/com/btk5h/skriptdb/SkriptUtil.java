@@ -24,10 +24,13 @@ public class SkriptUtil {
   static {
     Field _FIELD = null;
     try {
-      _FIELD = VariableString.class.getDeclaredField("string");
+      // Ändere dies:
+      // _FIELD = VariableString.class.getDeclaredField("string");
+      // zu diesem:
+      _FIELD = VariableString.class.getDeclaredField("strings");
       _FIELD.setAccessible(true);
     } catch (NoSuchFieldException e) {
-      Skript.error("Skript's 'string' field could not be resolved.");
+      Skript.error("Skript's 'strings' field could not be resolved.");
       e.printStackTrace();
     }
     STRING = _FIELD;
