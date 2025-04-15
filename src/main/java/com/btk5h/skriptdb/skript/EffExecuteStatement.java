@@ -55,12 +55,6 @@ import ch.njol.util.Kleenean;
  */
 public class EffExecuteStatement extends Delay {
   static {
-    // Register the HikariDataSource class with Skript (if not already done)
-//    if (Classes.getClassInfo("datasource") == null) {
-  //    Classes.registerClass(new ClassInfo<>(HikariDataSource.class, "datasource")
-    //      .user("datasources?"));
-    //}
-
     Skript.registerEffect(EffExecuteStatement.class,
         "[(1¦synchronously)] execute %string% (in|on) %datasource% " +
             "[and store [[the] (output|result)[s]] (to|in) [the] [var[iable]] %-objects%]");
@@ -251,7 +245,9 @@ public class EffExecuteStatement extends Delay {
   public boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed,
                       SkriptParser.ParseResult parseResult) {
     Expression<String> statementExpr = (Expression<String>) exprs[0];
-    if (statementExpr instanceof VariableString || statementExpr instanceof ExprUnsafe) {
+    if (statementExpr instanceof VariableString) {
+      query = statementExpr;
+    } else if (statementExpr instanceof ExprUnsafe) {
       query = statementExpr;
     } else {
       Skript.error("Database statements must be string literals. If you must use an expression, " +

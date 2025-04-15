@@ -66,22 +66,22 @@ public final class SkriptDB extends JavaPlugin {
     try {
       rowSetFactory = RowSetProvider.newFactory();
 
-      // Register with Skript first
+      // First register the addon
       addonInstance = Skript.registerAddon(this);
 
-      // Load classes using the addon
-      addonInstance.loadClasses("com.btk5h.skriptdb.skript", "types", "effects", "expressions");
+      // IMPORTANT: Register Types class first, it contains our datasource class registration
+      try {
+        Class.forName("com.btk5h.skriptdb.skript.Types");
+      } catch (ClassNotFoundException e) {
+        getLogger().severe("Could not register Types class: " + e.getMessage());
+      }
 
-      // Register the datasource class
-      Classes.registerClass(
-          new ClassInfo<>(HikariDataSource.class, "datasource")
-              .user("datasources?")
-              .name("Data Source")
-              .description("Represents a database connection source")
-              .since("1.0.0")
-      );
+      // Then load other classes
+      addonInstance.loadClasses("com.btk5h.skriptdb.skript");
 
-    } catch (SQLException | IOException e) {
+      // Don't register datasource class here, it's already done in Types class
+
+    } catch (Exception e) {
       getLogger().severe("Failed to initialize skript-db: " + e.getMessage());
       e.printStackTrace();
       getServer().getPluginManager().disablePlugin(this);

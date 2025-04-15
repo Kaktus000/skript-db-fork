@@ -1,4 +1,6 @@
 name: skript-db
-version: 0.2.1
+version: 0.5
 main: com.btk5h.skriptdb.SkriptDB
+api-version: 1.21
 depend: [Skript]
+description: Sensible SQL support for Skript
